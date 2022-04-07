@@ -1,0 +1,180 @@
+# Introduction to Elixir
+
+## Simple data types
+
+## Numbers
+
+```elixir
+# Integers and Floats
+
+# 1
+# +2
+# -3
+# 1_000_000_000
+
+# 12.345
+# -2.71
+# 3.14e-10
+# 123_456.789_1011e23
+```
+
+```elixir
+# Maths operations
+
+# 3 + 3 * 3
+# 3 + (3 * 3)
+
+# Integers are automatically converted to big integers
+# 123456789987654321 + 123456789987654321123456789987654321
+```
+
+```elixir
+# Comparisions
+
+# 1 == 1.0
+# 1 === 1.0
+
+# 1.0 != 1
+# 1.0 !== 1
+```
+
+## Atoms
+
+```elixir
+# Atoms examples
+
+# :some_atom
+# :AnotherAtom
+# :"Wh@tever insinde quotes !{}"
+# :"12" # 12 as an atom
+```
+
+## Booleans
+
+```elixir
+# true
+# true == :true
+# true === :true
+# !true
+# ! :true
+
+# Truthly values
+# nil
+# ! nil
+# ! :whatever
+# nil || :something
+# true && :something
+```
+
+## Chars
+
+```elixir
+# ?a
+# ?\n
+# ?a == 97
+```
+
+## Complex data types
+
+## Tuples
+
+```elixir
+# {}
+# 
+# {1, 2, 3}
+# {1, {2, :nested}}
+```
+
+## Lists
+
+```elixir
+# []
+# [1]
+# [:asdf, 1, "apple", {:tupple, 2}]
+
+# [1, 2, 3]
+# [1 | [2, 3]]
+# [1 | [2 | [3]]]
+# [1 | [2 | [3 | []]]]
+
+# 2 in [1, 2, 4]
+# 3 in [1, 2, 4]
+
+# [?A, ?l, ?e, ?k]
+
+# 'Alek' == "Alek"
+# IEx.Helpers.i('Alek')
+# IEx.Helpers.i("Alek")
+```
+
+## Ranges
+
+```elixir
+# 1..5
+
+# 3 in 1..5
+# 6 in 1..5
+
+# Enum.to_list(1..5)
+
+# 1.0..3
+```
+
+## Maps
+
+```elixir
+# %{}
+# Map.new()
+
+# computer = %{
+#   :type => :pc,
+#   "graphics card" => ["GTX", 760],
+#   {:processor, "intel"} => [{8, :cores}, {:type, :x86}]
+# }
+
+# computer[:type]
+# computer[{:processor, "intel"}]
+# computer[:not_exixsting_key]
+
+# computer.type
+# computer.not_exixsting_key
+# computer.{:processor, "intel"}
+
+# laptop = %{computer | :type => :laptop}
+# laptop = %{computer | :sound => {:serround, 5.1}}
+# laptop = Map.put(computer, :sound, {:serround, 5.1})
+
+# tablet = %{:type => %{divice_type: :tablet, os: :android}}
+
+# tablet.type.os
+# tablet[:type].os
+# tablet.type[:os]
+# tablet[:type][:os]
+```
+
+## Structs
+
+```elixir
+defmodule Device do
+  defstruct devide_type: nil,
+            os: :linux,
+            processor: nil
+end
+```
+
+```elixir
+# pc = %Device{
+#   devide_type: :pc
+# }
+
+# pc
+# pc.os
+
+# tablet = %Device{
+#   devide_type: :tablet,
+#   processor: {:intel, :x86},
+#   os: :android
+# }
+
+# tablet
+```
