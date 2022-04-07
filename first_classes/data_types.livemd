@@ -110,6 +110,9 @@ name = "Aleksander"
 
 ## Tuples
 
+Tuples are constant size gropings of elements.
+They have faster element acces time then lists.
+
 ```elixir
 # {}
 # 
@@ -118,6 +121,10 @@ name = "Aleksander"
 ```
 
 ## Lists
+
+Elixir uses square brackets to specify a (linked) list of values.
+Lists are heterogeneous, elements of the list may be of different types.
+Lists can be concatented using `++` infix operator.
 
 ```elixir
 # []
@@ -135,24 +142,19 @@ name = "Aleksander"
 # [?A, ?l, ?e, ?k]
 
 # 'Alek' == "Alek"
+
+# Getting type:
 # IEx.Helpers.i('Alek')
 # IEx.Helpers.i("Alek")
-```
 
-## Ranges
-
-```elixir
-# 1..5
-
-# 3 in 1..5
-# 6 in 1..5
-
-# Enum.to_list(1..5)
-
-# 1.0..3
+# [1, 2] ++ [3, 4]
 ```
 
 ## Maps
+
+A map is created using the `%{}` syntax.
+Maps can be pattern matched.
+Read more: https://dashbit.co/blog/writing-assertive-code-with-elixir
 
 ```elixir
 # %{}
@@ -186,6 +188,8 @@ name = "Aleksander"
 
 ## Structs
 
+Structs are extensions built on top of maps with default values.
+
 ```elixir
 defmodule Device do
   defstruct devide_type: nil,
@@ -210,3 +214,5 @@ end
 
 # tablet
 ```
+
+If you want to know more see: https://elixir-lang.org/getting-started/introduction.html and the following chapters.
