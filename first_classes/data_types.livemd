@@ -4,6 +4,10 @@
 
 ## Numbers
 
+There are 2 types of numbers in Elixir integers and floats. 
+They work like in most other programming languages.
+Note: integers automaticly switch to bigInts so there no need to remeber about it.
+
 ```elixir
 # Integers and Floats
 
@@ -18,6 +22,8 @@
 # 123_456.789_1011e23
 ```
 
+
+
 ```elixir
 # Maths operations
 
@@ -27,6 +33,9 @@
 # Integers are automatically converted to big integers
 # 123456789987654321 + 123456789987654321123456789987654321
 ```
+
+There are 2 types of comaprisons on Elixir: normal and strict one.
+The strict one checks not only for value but also for type.
 
 ```elixir
 # Comparisions
@@ -40,6 +49,8 @@
 
 ## Atoms
 
+Atoms are constant literals where its value is its own name.
+
 ```elixir
 # Atoms examples
 
@@ -50,6 +61,13 @@
 ```
 
 ## Booleans
+
+Booleans are in fact just atoms `:true` and `:false`.
+In Elixir boolean logic there is a concept of _truthly values_.
+There is no separare value for _nil_ therefore atom `:nil` is used.
+You can type `nil` for simplicity sake.
+Boolean operators `&&` and `||` consider `nil` to be the same as `false` and anything else is consifered to be `true`.
+Operator `!` negates the truthly values.
 
 ```elixir
 # true
@@ -68,10 +86,24 @@
 
 ## Chars
 
+Chars are stored as their unicode values (integers).
+
 ```elixir
 # ?a
 # ?\n
 # ?a == 97
+```
+
+## String
+
+String is stored as a binary and not as a list of chars (like in eg Haskell) for performence sake.
+It uses UTF-8 encoding.
+You can interpolate it uing `#{...}`.
+
+```elixir
+name = "Aleksander"
+
+"Hello #{name}"
 ```
 
 ## Complex data types
