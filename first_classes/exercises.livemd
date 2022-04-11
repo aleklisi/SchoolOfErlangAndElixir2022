@@ -1,0 +1,87 @@
+# Exercises
+
+## FizzBuzz
+
+Write a function that returns the numbers from 1 to `n`.
+But for multiples of:
+
+* three replaces a number with an atom `:fizz` instead of the number
+* five replaces a number with an atom `:buzz`
+* both three and five replaces a number with an atom `:fizzbuzz`.
+
+Tip: see [How to use `div/2` and/or `rem/2`?](https://elixir-lang.org/getting-started/basic-types.html#basic-arithmetic)
+
+```elixir
+defmodule FizzBuzz do
+  def fizzbuzz(n) do
+    []
+  end
+end
+```
+
+```elixir
+[] = FizzBuzz.fizzbuzz(0)
+[1] = FizzBuzz.fizzbuzz(1)
+[1, 2] = FizzBuzz.fizzbuzz(2)
+[1, 2, :fizz] = FizzBuzz.fizzbuzz(3)
+
+[
+  1,
+  2,
+  :fizz,
+  4,
+  :buzz,
+  :fizz,
+  7,
+  8,
+  :fizz,
+  :buzz,
+  11,
+  :fizz,
+  13,
+  14,
+  :fizzbuzz,
+  16,
+  17,
+  :fizz,
+  19,
+  :buzz,
+  :fizz,
+  22,
+  23,
+  :fizz,
+  :buzz,
+  26,
+  :fizz,
+  28,
+  29,
+  :fizzbuzz,
+  31
+] = FizzBuzz.fizzbuzz(31)
+```
+
+## Quick sort
+
+If list is empty (or 1 element) list it is sorted.
+Pick the first element of a list `fisrt`.
+Filer smaller elements from the the first element `first` of a remaining list to a list `smaller`.
+Filer greater or equal elements from the the first element `first` of a remaining list filter to a list `bigger`.
+Sort `smaller` to `sorted_smaller`.
+Sort `bigger` to `sorted_bigger`.
+Return `sorted_smaller ++ [first] ++ sorted_bigger`.
+Tip: use [`Enum.filter/2`](https://elixirschool.com/en/lessons/basics/enum/#filter).
+
+```elixir
+defmodule QuickSort do
+  def quicksort(lst) do
+    lst
+  end
+end
+```
+
+```elixir
+[] = QuickSort.quicksort([])
+[1] = QuickSort.quicksort([1])
+[1, 2] = QuickSort.quicksort([1, 2])
+[1, 2] = QuickSort.quicksort([2, 1])
+```
