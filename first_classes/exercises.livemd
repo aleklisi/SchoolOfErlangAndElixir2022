@@ -75,6 +75,7 @@ Tip: use [`Enum.filter/2`](https://elixirschool.com/en/lessons/basics/enum/#filt
 defmodule QuickSort do
   def quicksort(lst) do
     lst
+    |> Enum.sort()
   end
 end
 ```
@@ -84,4 +85,113 @@ end
 [1] = QuickSort.quicksort([1])
 [1, 2] = QuickSort.quicksort([1, 2])
 [1, 2] = QuickSort.quicksort([2, 1])
+```
+
+```elixir
+ExUnit.start(autorun: false)
+
+defmodule QuickSort.Test do
+  use ExUnit.Case, async: false
+
+  test "Empty list is sorted" do
+    assert [] == QuickSort.quicksort([])
+  end
+
+  test "single element list is sorted" do
+    assert [1] == QuickSort.quicksort([1])
+  end
+
+  test "sorted 2 element list is sorted" do
+    assert [1, 2] == QuickSort.quicksort([1, 2])
+  end
+
+  test "unsorted 2 element list gets sorted" do
+    assert [1, 2] == QuickSort.quicksort([2, 1])
+  end
+
+  test "comperative implementation check" do
+    len = :rand.uniform(100_000)
+
+    lst =
+      1..len
+      |> Enum.to_list()
+      |> Enum.map(fn _ -> :rand.uniform(100_000) - 50_000 end)
+
+    expected = Enum.sort(lst)
+    actuall = QuickSort.quicksort(lst)
+    assert expected == actuall
+  end
+end
+
+ExUnit.run()
+```
+
+## Wordle
+
+Wordle is such a simple game that there are hardly any rules. But here you go:
+
+* You have to guess the Wordle in six goes or less
+* Every word you enter must be in the word list.
+* A correct letter turns green.
+* A correct letter in the wrong place turns yellow[*](https://nerdschalk.com/wordle-same-letter-twice-rules-explained-how-does-it-work/).
+* An incorrect letter turns gray.
+* Letters can be used more than once.
+* Word consists of 5 letters.
+
+Rules taken form [here](https://www.tomsguide.com/news/what-is-wordle).
+
+Implement a function that takes two 5 letters words (the one that needs to be guessed and your guess) and returnes
+a list of colors for each letter.
+
+Tip:
+
+```elixir
+[?a, ?s, ?d, ?f] == :binary.bin_to_list("asdf")
+```
+
+```elixir
+defmodule Wordle do
+  def color_word(actuall, guess) do
+    [:gray, :gray, :gray, :gray, :gray]
+    # TODO finish implementation
+  end
+end
+```
+
+Implement remaining tescases
+
+```elixir
+ExUnit.start(autorun: false)
+
+defmodule Wordle.Test do
+  use ExUnit.Case, async: false
+
+  test "none of the latters match" do
+    expected = 1..5 |> Enum.to_list() |> Enum.map(fn _ -> :gray end)
+    assert expected == Wordle.color_word("abcde", "fghij")
+  end
+
+  # test "all of the latters match" do
+  # end
+
+  # test "a letter is in different place" do
+  # end
+
+  # test "a letter is passed 2 times but exists once in a word both in different place" do
+  # end
+
+  # test "a letter is passed 3 times but exists once in a word both in different place" do
+  # end
+
+  # test "a letter is passed 2 times but exists once in a word and one is in the right place" do
+  # end
+
+  # test "a letter is passed 3 times but exists once in a word and one is in the right place" do
+  # end
+
+  # test "2 green, 1 yellow" do
+  # end
+end
+
+ExUnit.run()
 ```
