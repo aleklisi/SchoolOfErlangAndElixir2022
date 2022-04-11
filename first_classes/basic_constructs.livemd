@@ -1,0 +1,137 @@
+# Basic constructs
+
+## Matching operator
+
+Matching operator `=` is used in one of 3 ways:
+
+* to assign value to variable
+* to check if the value matches given pattern
+* to extract date from more complex structers
+
+```elixir
+x = 1
+x
+```
+
+```elixir
+{:ok, value} = {:ok, 123}
+value
+
+# {:ok, value} = {:error, "some reason"}
+# value
+```
+
+```elixir
+{:error, %{:reason => reason}} = {:error, %{:reason => "something went wong", :code => 123}}
+reason
+```
+
+## How to code?
+
+Code is written as functions.
+Functions are grupoed in modules.
+There are 2 types access of functions in Elixir:
+
+* private - can only be accessed within module, defined with `defp` (read more [here](https://medium.com/about-erlang/how-private-are-erlang-private-functions-36382c6abfa4))
+* public - can be accessed from anywhere in the code , defined with `def`
+
+Function always returns the last value it evaluated.
+
+```elixir
+defmodule Math.Examples.Fib do
+  def fib(0), do: 1
+  def fib(1), do: 1
+
+  def fib(n) do
+    fib(n - 1) + fib(n - 2)
+  end
+
+  def seq_fib(max), do: piv_fib(max, 0, 1, 0)
+
+  defp piv_fib(max, counter, current, previous) when counter >= max, do: current
+
+  ## Handling the warining:
+  ## warning: variable "previous" is unused (if the variable is not meant to be used, prefix it with an underscore)
+  ## first_classes/basic_constructs.livemd#cell:10: Fibbonaci.Sequence.piv_fib/4
+
+  # defp piv_fib(max, counter, current, _previous) when counter > max, do: current
+  # defp piv_fib(max, counter, current, _) when counter > max, do: current
+
+  defp piv_fib(max, counter, current, previous) do
+    piv_fib(max, counter + 1, current + previous, current)
+  end
+end
+
+defmodule Math.Examples.Add do
+  def add(a, b) do
+    a + b
+    ## When you uncomment `:ok` it will be returned instead of a + b
+    # :ok
+  end
+end
+```
+
+```elixir
+{[
+   Math.Examples.Fib.fib(0),
+   Math.Examples.Fib.fib(1),
+   Math.Examples.Fib.fib(2),
+   Math.Examples.Fib.fib(3),
+   Math.Examples.Fib.fib(4),
+   Math.Examples.Fib.fib(5)
+ ],
+ [
+   Math.Examples.Fib.seq_fib(0),
+   Math.Examples.Fib.seq_fib(1),
+   Math.Examples.Fib.seq_fib(2),
+   Math.Examples.Fib.seq_fib(3),
+   Math.Examples.Fib.seq_fib(4),
+   Math.Examples.Fib.seq_fib(5)
+ ]}
+```
+
+```elixir
+Math.Examples.Add.add(2, 3)
+```
+
+## If
+
+```elixir
+age = 16
+
+if age > 18 do
+  "You can drive"
+end
+
+# if age > 18 do
+#   "You can drive"
+# else
+#   "You CANNOT drive"
+# end
+```
+
+## Case
+
+```elixir
+# dogecoins
+earnings = 12
+
+special_value = 12
+
+case earnings do
+  10 -> "you earn averige selary"
+  # pinning operator
+  ^special_value -> "you earn #{special_value} dogecoins"
+  sallary when sallary > 13 -> "you are too rich"
+  _ -> "you are underpaied"
+end
+```
+
+```elixir
+age = 16
+
+case age do
+  age when age > 18 -> "You can drive"
+  _ -> "You CANNOT drive"
+end
+```
