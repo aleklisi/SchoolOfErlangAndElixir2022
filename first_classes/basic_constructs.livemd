@@ -8,6 +8,8 @@ Matching operator `=` is used in one of 3 ways:
 * to check if the value matches given pattern
 * to extract date from more complex structers
 
+see more [here](https://elixir-lang.org/getting-started/pattern-matching.html).
+
 ```elixir
 x = 1
 x
@@ -29,13 +31,18 @@ reason
 ## How to code?
 
 Code is written as functions.
-Functions are grupoed in modules.
+Functions are grupoed in modules. (read more [here](https://elixir-lang.org/getting-started/modules-and-functions.html))
 There are 2 types access of functions in Elixir:
 
 * private - can only be accessed within module, defined with `defp` (read more [here](https://medium.com/about-erlang/how-private-are-erlang-private-functions-36382c6abfa4))
 * public - can be accessed from anywhere in the code , defined with `def`
 
 Function always returns the last value it evaluated.
+
+Function consists of multiple clauses (arguments patterns).
+Clauses are matched from top to bottom.
+`when` keyword allows to define a condition to enter a clause.
+Only limited list of functions can ne used in guards (see more [here](https://hexdocs.pm/elixir/guards.html)).
 
 ```elixir
 defmodule Math.Examples.Fib do
@@ -120,7 +127,7 @@ special_value = 12
 
 case earnings do
   10 -> "you earn averige selary"
-  # pinning operator
+  ## pinning operator
   ^special_value -> "you earn #{special_value} dogecoins"
   sallary when sallary > 13 -> "you are too rich"
   _ -> "you are underpaied"
@@ -134,4 +141,84 @@ case age do
   age when age > 18 -> "You can drive"
   _ -> "You CANNOT drive"
 end
+```
+
+see more [here](https://elixir-lang.org/getting-started/case-cond-and-if.html)
+
+## Anonimous functions
+
+An anonymous function has no name.
+They anre usually dined ad hoc and are usually simple.
+There are 2 ways of writing them.
+I suggest using `fn` for beginners as they are simplier to write and read.
+To evaluate the function we need to pass the arguments with dot `.` before round bracket.
+see more [here](https://elixirschool.com/en/lessons/basics/functions/)
+
+```elixir
+add = fn a, b -> a + b end
+add.(2, 3)
+```
+
+```elixir
+add2 = &(&1 + &2)
+add2.(2, 3)
+```
+
+```elixir
+# Pattern meatching in annonimous functions:
+count = fn
+  1 -> :one
+  2 -> :two
+  _ -> :many
+end
+
+[
+  count.(1),
+  count.(2),
+  count.(3),
+  count.(4)
+]
+```
+
+## Pipe
+
+Pipe operator `|>` passes the result of proevious expression to the next function as the first argument. see more [here](https://elixirschool.com/en/lessons/basics/pipe_operator)
+
+```elixir
+# add(add(2, 3), 4)
+2
+## NO DOT before round bracket as this is a function defined in module
+|> Math.Examples.Add.add(3)
+## DOT before round bracket as this is an anonimous function
+|> add.(4)
+```
+
+## Higher order functions
+
+Functions that accept other functions as arguments. read more [here](https://serokell.io/blog/elixir-for-beginners)
+
+```elixir
+divices = [
+  %{:os => :mac, :processor => :intel, :type => :laptop},
+  %{:os => :mac, :processor => :intel, :type => :phone},
+  %{:os => :windows, :processor => :intel, :type => :laptop},
+  %{:os => :android, :processor => :intel, :type => :phone},
+  %{:os => :windows, :processor => :intel, :type => :phone}
+]
+
+## I want to know only what type of divices are used  
+divices
+|> Enum.map(fn %{:type => type} -> type end)
+|> Enum.uniq()
+
+## I want to only see the windows running divices
+# divices |>
+# Enum.filter(fn(%{:os => :windows}) -> true; _ -> false end)
+```
+
+```elixir
+## I want to sum numbers form 1 to 10
+1..10
+|> Enum.to_list()
+|> Enum.reduce(&Math.Examples.Add.add/2)
 ```
