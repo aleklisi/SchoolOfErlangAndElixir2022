@@ -22,8 +22,6 @@ Note: integers automaticly switch to bigInts so there no need to remeber about i
 # 123_456.789_1011e23
 ```
 
-
-
 ```elixir
 # Maths operations
 
@@ -172,7 +170,7 @@ Read more: https://dashbit.co/blog/writing-assertive-code-with-elixir
 
 # computer.type
 # computer.not_exixsting_key
-# computer.{:processor, "intel"}
+# computer.
 
 # laptop = %{computer | :type => :laptop}
 # laptop = %{computer | :sound => {:serround, 5.1}}
