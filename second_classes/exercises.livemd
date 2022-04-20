@@ -1,0 +1,53 @@
+# Exercises
+
+## The ring
+
+One Ring to rule them all,
+One Ring to find them,
+One Ring to bring them all and in the darkness bind them.
+
+<!-- livebook:{"break_markdown":true} -->
+
+Implement a ring of n (where n is positive integer > 2) processes,
+The 1st process is forwarding a message to the second one,
+the second one to the 3ed one etc
+
+```mermaid
+graph LR;
+      1 --> 2;
+      2 --> 3;
+      3 --> ...;
+      ... --> n;
+      n --> 1;
+
+```
+
+## The best Wordle opening word
+
+Write a simulation where you check which is the best opening word.
+Try using multiple processes for that.
+For the sake of this exercise, let's assume that the best opening word is the one that eliminates the most possble words for the second guess.
+The algorithm would be to:
+
+1. start the `main`
+2. the `main` process reads a list of all possible words to be guessed (you will find them in the wordle_words.txt file)
+3. the `main` generates all possible 5 letters strings and for each such string starts the `checker` process.
+4. the `main` process goes to receive loop and keeps track of all of the `checker` processes as well as of the best opening word score (max of the number of words eliminated or min of numbers left)
+5. when there are no more `checker` porcesses left, the `main` process prints the result whihc is the best opening word
+
+If you strugle here search for inspiration or you want to go beond any expectations see this video: [here](https://youtu.be/v68zYyaEmEA) and then [the follow up](https://youtu.be/fRed0Xmc2Wg) one to fix the possible bug.
+
+```mermaid
+graph TB;
+      main -- start ---> checker_aaaaa;
+      main -- start ---> checker_aaaab;
+      main -- start ---> checker_aaaac;
+      main -- ... ---> ...;
+
+      checker_aaaaa -- result --> main;
+      checker_aaaab -- result --> main;
+      checker_aaaac -- result --> main;
+      ... -- ... --> main;
+      
+
+```
