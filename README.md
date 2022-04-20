@@ -13,3 +13,5 @@ For further details, see the `README.md` file in the `first_classes` directory.
 https://github.com/tabatkins/wordle-list/blob/main/words
 
 https://superruzafa.github.io/visual-elixir-reference/
+
+The solutions to the exercises are on the solutions branch.

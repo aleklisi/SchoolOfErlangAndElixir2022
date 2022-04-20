@@ -1,0 +1,226 @@
+# Processes
+
+## What are Erlang processes?
+
+Erlang and Elixir are designed for massive concurrency.
+Erlang and Elixir processes are
+
+* lightweight (grow and shrink dynamically)
+* with small memory footprint,
+* fast to create and terminate
+* the scheduling overhead is low.
+
+## How to scale with Erlang processes?
+
+Write a function to work in sequential way and then spawn it in multiple times.
+read more [here](https://elixir-lang.org/getting-started/processes.html).
+
+## Starting a new process
+
+```elixir
+IO.inspect("Start")
+
+pid =
+  spawn(fn ->
+    IO.inspect("My pid is #{inspect(self())}")
+    :timer.sleep(100)
+  end)
+
+IO.inspect("My pid is #{inspect(self())}")
+
+pid |> :erlang.process_info() |> IO.inspect()
+
+IO.inspect("#{inspect(self())} is waiting")
+:timer.sleep(150)
+
+pid |> :erlang.process_info() |> IO.inspect()
+
+IO.inspect("Stop")
+```
+
+## Messages
+
+Processes comuncate using messages.
+They do not share memory.
+This is implelmentation of actor's model.
+Read:
+
+* more about actor model [here](https://www.brianstorti.com/the-actor-model/)
+* how it compares between Erlang and Scala [here](https://rocketeer.be/articles/concurrency-in-erlang-scala/)
+
+```elixir
+loop = fn fun ->
+  receive do
+    {:print_me, msg} ->
+      IO.inspect("Printing #{inspect(msg)}")
+      fun.(fun)
+
+    {:add_3_and_print, number} ->
+      IO.inspect("Printing #{number + 3}")
+      fun.(fun)
+
+    :stop ->
+      :ok
+  end
+end
+
+pid = spawn(fn -> loop.(loop) end)
+
+pid |> :erlang.process_info(:messages) |> IO.inspect()
+
+send(pid, {:print_me, "this is the message"})
+pid |> :erlang.process_info(:messages) |> IO.inspect()
+
+send(pid, {:add_3_and_print, 2})
+pid |> :erlang.process_info(:messages) |> IO.inspect()
+
+send(pid, "this message is 'lost' :O or is it?!")
+pid |> :erlang.process_info(:messages) |> IO.inspect()
+
+:timer.sleep(100)
+pid |> :erlang.process_info(:messages) |> IO.inspect()
+
+send(pid, :stop)
+
+## Here is a race condition:
+## geting process_info might be faster or slower then handling message :stop
+## so we will either get the actuall info or :undefined if process has terminated 
+pid |> :erlang.process_info(:messages) |> IO.inspect()
+
+:timer.sleep(100)
+pid |> :erlang.process_info(:messages) |> IO.inspect()
+```
+
+## Links
+
+Theory behid the links: [here](https://www.erlang.org/doc/reference_manual/processes.html#links)
+TL DR; When one of the 2 linked processes dies then the other one get an exit signal.
+
+<!-- livebook:{"break_markdown":true} -->
+
+```mermaid
+  graph LR;
+      A-- link ---B;
+      B-- link ---C;
+```
+
+```mermaid
+  graph LR;
+      crash_A-- exit_signal -->B;
+      B-- link ---C;
+```
+
+```mermaid
+  graph LR;
+      crash_B-- exit_signal -->C;
+```
+
+```mermaid
+  graph LR;
+      crash_C;
+```
+
+```elixir
+## Clean up to terminate the processes if I would like to rerun
+processes_names = [:a, :b, :c]
+
+Enum.map(processes_names, fn pid ->
+  try do
+    send(pid, :ok)
+  rescue
+    _ -> :ok
+  end
+end)
+
+spawn_loop = fn
+  [name], _ ->
+    :erlang.register(name, self())
+
+    receive do
+      _ -> :ok
+    end
+
+  # # # Uncomment to trap exit in the :b process 
+  # # [:b = h | t], fun ->
+  # #   Process.flag(:trap_exit, true)
+  # #   :erlang.register(h, self())
+  # #   spawn_link(fn -> fun.(t, fun) end)
+  # # # Uncomment to show that the exit signal gets changed into a message 
+  # #   receive do msg -> IO.inspect("Exit signal as a message: #{inspect(msg)}") end
+  # #   receive do _ -> :ok end
+  [h | t], fun ->
+    :erlang.register(h, self())
+    spawn_link(fn -> fun.(t, fun) end)
+
+    receive do
+      _ -> :ok
+    end
+end
+
+pid = spawn(fn -> spawn_loop.(processes_names, spawn_loop) end)
+
+Enum.map(processes_names, fn proc_name ->
+  pid = :erlang.whereis(proc_name)
+  {:links, links} = :erlang.process_info(pid, :links)
+  IO.inspect("#{inspect(pid)} named #{inspect(proc_name)} is linked to #{inspect(links)}")
+end)
+
+[
+  :a |> Process.whereis(),
+  :b |> Process.whereis(),
+  :c |> Process.whereis()
+]
+|> IO.inspect()
+
+:a |> Process.whereis() |> Process.exit(:die_potato)
+:timer.sleep(10)
+
+[
+  :a |> Process.whereis(),
+  :b |> Process.whereis(),
+  :c |> Process.whereis()
+]
+|> IO.inspect()
+```
+
+```mermaid
+  graph LR;
+      A-- link ---B;
+      B-- link ---C;
+```
+
+```mermaid
+  graph LR;
+      A-- link ---B_trap_exit_true;
+      B_trap_exit_true-- link ---C;
+```
+
+```mermaid
+  graph LR;
+      crash_A-- exit_signal -->B_trap_exit_true;
+      B_trap_exit_true-- link ---C;
+```
+
+```mermaid
+  graph LR;
+      B_trap_exit_true-- link ---C;
+```
+
+## Monitors
+
+An alternative to links are monitors.
+They are unidirectional.
+Repeated monitor created creates several independent monitors, and each one sends a 'DOWN' message when Pid terminates.
+Read theory [here](https://www.erlang.org/doc/reference_manual/processes.html#monitors).
+
+<!-- livebook:{"break_markdown":true} -->
+
+```mermaid
+  graph LR;
+      A-- monitor1 -->B;
+      A-- monitor2 -->B;
+```
+
+```elixir
+pid_a = spawn(fn -> receive do _ )
+```

@@ -1,6 +1,6 @@
 # Elixir Syntax
 
-During the first classes, we will learn basic Elixir data types and syntax.
+During the first class, we will learn basic Elixir data types and syntax.
 We will be using a new tool called `livebook`.
 
 ## How to start?
