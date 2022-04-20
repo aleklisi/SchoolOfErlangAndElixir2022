@@ -13,8 +13,17 @@ Tip: see [How to use `div/2` and/or `rem/2`?](https://elixir-lang.org/getting-st
 
 ```elixir
 defmodule FizzBuzz do
+  def fizzbuzz(0), do: []
+
   def fizzbuzz(n) do
-    []
+    1..n
+    |> Enum.to_list()
+    |> Enum.map(fn
+      num when rem(num, 15) == 0 -> :fizzbuzz
+      num when rem(num, 5) == 0 -> :buzz
+      num when rem(num, 3) == 0 -> :fizz
+      num -> num
+    end)
   end
 end
 ```
@@ -73,9 +82,21 @@ Tip: use [`Enum.filter/2`](https://elixirschool.com/en/lessons/basics/enum/#filt
 
 ```elixir
 defmodule QuickSort do
-  def quicksort(lst) do
-    lst
-    |> Enum.sort()
+  def quicksort([]), do: []
+  def quicksort([x]), do: [x]
+
+  def quicksort([current | rest]) do
+    sorted_smaller =
+      rest
+      |> Enum.filter(&(&1 < current))
+      |> quicksort()
+
+    sorted_bigger_or_equil =
+      rest
+      |> Enum.filter(&(&1 >= current))
+      |> quicksort()
+
+    sorted_smaller ++ [current] ++ sorted_bigger_or_equil
   end
 end
 ```
@@ -107,6 +128,10 @@ defmodule QuickSort.Test do
 
   test "unsorted 2 element list gets sorted" do
     assert [1, 2] == QuickSort.quicksort([2, 1])
+  end
+
+  test "repeated element does not disappear" do
+    assert [3, 3, 3] == QuickSort.quicksort([3, 3, 3])
   end
 
   test "comperative implementation check" do
@@ -152,8 +177,68 @@ Tip:
 ```elixir
 defmodule Wordle do
   def color_word(actuall, guess) do
-    [:gray, :gray, :gray, :gray, :gray]
-    # TODO finish implementation
+    actuall_lst = :binary.bin_to_list(actuall)
+    guess_lst = :binary.bin_to_list(guess)
+    color(guess_lst, actuall_lst)
+  end
+
+  defp color(guess_lst, actuall_lst) do
+    green = green(guess_lst, actuall_lst)
+
+    actual_possibly_yellow =
+      [green, actuall_lst]
+      |> List.zip()
+      |> Enum.filter(fn
+        {:green, _} -> false
+        _ -> true
+      end)
+      |> Enum.map(fn {_, letter} -> letter end)
+      |> List.foldl(%{}, fn letter, letters_count_map ->
+        old = Map.get(letters_count_map, letter, 0)
+        Map.put(letters_count_map, letter, old + 1)
+      end)
+
+    yellow_or_gray(guess_lst, green, actual_possibly_yellow)
+    |> Enum.map(fn {_, color} -> color end)
+  end
+
+  defp green(guess_lst, actuall_lst) do
+    [guess_lst, actuall_lst]
+    |> List.zip()
+    |> Enum.map(fn
+      {x, x} -> :green
+      _ -> :not_green
+    end)
+  end
+
+  defp yellow_or_gray([], _green, _actual_possibly_yellow), do: []
+
+  defp yellow_or_gray([guess_hd | guess_tail], [:green | green_tail], actual_possibly_yellow) do
+    [{guess_hd, :green} | yellow_or_gray(guess_tail, green_tail, actual_possibly_yellow)]
+  end
+
+  defp yellow_or_gray([guess_hd | guess_tail], [:not_green | green_tail], actual_possibly_yellow) do
+    if Map.has_key?(actual_possibly_yellow, guess_hd) do
+      new_actual_possibly_yellow =
+        case Map.get(actual_possibly_yellow, guess_hd) do
+          1 -> Map.delete(actual_possibly_yellow, guess_hd)
+          n -> Map.put(actual_possibly_yellow, guess_hd, n - 1)
+        end
+
+      [
+        {guess_hd, :yellow}
+        | yellow_or_gray(
+            guess_tail,
+            green_tail,
+            new_actual_possibly_yellow
+          )
+      ]
+    else
+      [
+        {guess_hd, :gray}
+        | yellow_or_gray(guess_tail, green_tail, actual_possibly_yellow)
+      ]
+    end
   end
 end
 ```
@@ -167,30 +252,39 @@ defmodule Wordle.Test do
   use ExUnit.Case, async: false
 
   test "none of the latters match" do
-    expected = 1..5 |> Enum.to_list() |> Enum.map(fn _ -> :gray end)
+    expected = [:gray, :gray, :gray, :gray, :gray]
     assert expected == Wordle.color_word("abcde", "fghij")
   end
 
-  # test "all of the latters match" do
-  # end
+  test "all of the latters match" do
+    expected = [:green, :green, :green, :green, :green]
+    assert expected == Wordle.color_word("abcde", "abcde")
+  end
 
-  # test "a letter is in different place" do
-  # end
+  test "a letter is in different place" do
+    expected = [:green, :gray, :gray, :gray, :gray]
+    assert expected == Wordle.color_word("acccc", "abbbb")
+  end
 
-  # test "a letter is passed 2 times but exists once in a word both in different place" do
-  # end
+  test "a letter is passed 2 times but exists once in a word both in different place" do
+    expected = [:yellow, :gray, :gray, :gray, :gray]
+    assert expected == Wordle.color_word("cccac", "aabbb")
+  end
 
-  # test "a letter is passed 3 times but exists once in a word both in different place" do
-  # end
+  test "a letter is passed 3 times but exists once in a word all in different place" do
+    expected = [:yellow, :gray, :gray, :gray, :gray]
+    assert expected == Wordle.color_word("bbbbc", "cccaa")
+  end
 
-  # test "a letter is passed 2 times but exists once in a word and one is in the right place" do
-  # end
+  test "a letter is passed 2 times but exists once in a word and one is in the right place" do
+    expected = [:gray, :green, :gray, :gray, :gray]
+    assert expected == Wordle.color_word("abaaa", "cbbcc")
+  end
 
-  # test "a letter is passed 3 times but exists once in a word and one is in the right place" do
-  # end
-
-  # test "2 green, 1 yellow" do
-  # end
+  test "a letter is passed 3 times but exists 3 in a word and one is in the right place" do
+    expected = [:gray, :gray, :green, :yellow, :yellow]
+    assert expected == Wordle.color_word("bbbaa", "ccbbb")
+  end
 end
 
 ExUnit.run()
