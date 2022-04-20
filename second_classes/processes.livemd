@@ -222,5 +222,35 @@ Read theory [here](https://www.erlang.org/doc/reference_manual/processes.html#mo
 ```
 
 ```elixir
-pid_a = spawn(fn -> receive do _ )
+defmodule MonitorsExample do
+  def b do
+    receive do
+      _ -> :ok
+    end
+  end
+
+  def a(b_pid) do
+    ## Uncomment to show multiple of the down messages
+    # Process.monitor(b_pid)
+    # Process.monitor(b_pid)
+    Process.monitor(b_pid)
+    a()
+  end
+
+  defp a() do
+    receive do
+      msg ->
+        IO.inspect("A received message #{inspect(msg)}")
+        a()
+    end
+  end
+end
+```
+
+```elixir
+b_pid = spawn(&MonitorsExample.b/0)
+
+_a_pid = spawn(MonitorsExample, :a, [b_pid])
+
+Process.exit(b_pid, :die_potato)
 ```
