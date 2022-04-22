@@ -1,17 +1,8 @@
 defmodule Wordle do
   def color_word(actual, guess) do
-    #actual =
-    #  actual
-    #  |> char_freq_index()
     guess
-      |> index_string()
-      |> check_guess(char_freq_index(actual))
-      #|> Enum.map(fn {x, idx} ->
-      #  case actual[x] do
-      #    nil -> :grey
-      #    index -> if idx in index, do: :green, else: :yellow
-      #  end
-      #end)
+    |> index_string()
+    |> check_guess(char_freq_index(actual))
   end
 
   def char_freq_index(string) do
