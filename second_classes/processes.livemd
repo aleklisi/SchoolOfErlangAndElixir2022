@@ -2,6 +2,18 @@
 
 ## What are Erlang processes?
 
+```elixir
+defmodule AAA do
+  def a do
+    :hello
+  end
+end
+```
+
+```elixir
+AAA.a()
+```
+
 Erlang and Elixir are designed for massive concurrency.
 Erlang and Elixir processes are
 
@@ -23,10 +35,11 @@ IO.inspect("Start")
 pid =
   spawn(fn ->
     IO.inspect("My pid is #{inspect(self())}")
+    1 = 2
     :timer.sleep(100)
   end)
 
-IO.inspect("My pid is #{inspect(self())}")
+IO.inspect("Main pid is #{inspect(self())}")
 
 pid |> :erlang.process_info() |> IO.inspect()
 
@@ -124,13 +137,13 @@ TL DR; When one of the 2 linked processes dies then the other one get an exit si
 ## Clean up to terminate the processes if I would like to rerun
 processes_names = [:a, :b, :c]
 
-Enum.map(processes_names, fn pid ->
-  try do
-    send(pid, :ok)
-  rescue
-    _ -> :ok
-  end
-end)
+# Enum.map(processes_names, fn pid ->
+#   try do
+#     send(pid, :ok)
+#   rescue
+#     _ -> :ok
+#   end
+# end)
 
 spawn_loop = fn
   [name], _ ->
@@ -140,14 +153,20 @@ spawn_loop = fn
       _ -> :ok
     end
 
-  # # # Uncomment to trap exit in the :b process 
-  # # [:b = h | t], fun ->
-  # #   Process.flag(:trap_exit, true)
-  # #   :erlang.register(h, self())
-  # #   spawn_link(fn -> fun.(t, fun) end)
-  # # # Uncomment to show that the exit signal gets changed into a message 
-  # #   receive do msg -> IO.inspect("Exit signal as a message: #{inspect(msg)}") end
-  # #   receive do _ -> :ok end
+  # Uncomment to trap exit in the :b process 
+  [:b = h | t], fun ->
+    Process.flag(:trap_exit, true)
+    :erlang.register(h, self())
+    spawn_link(fn -> fun.(t, fun) end)
+    # Uncomment to show that the exit signal gets changed into a message 
+    receive do
+      msg -> IO.inspect("Exit signal as a message: #{inspect(msg)}")
+    end
+
+    receive do
+      _ -> :ok
+    end
+
   [h | t], fun ->
     :erlang.register(h, self())
     spawn_link(fn -> fun.(t, fun) end)
@@ -231,8 +250,8 @@ defmodule MonitorsExample do
 
   def a(b_pid) do
     ## Uncomment to show multiple of the down messages
-    # Process.monitor(b_pid)
-    # Process.monitor(b_pid)
+    Process.monitor(b_pid)
+    Process.monitor(b_pid)
     Process.monitor(b_pid)
     a()
   end
@@ -252,5 +271,5 @@ b_pid = spawn(&MonitorsExample.b/0)
 
 _a_pid = spawn(MonitorsExample, :a, [b_pid])
 
-Process.exit(b_pid, :die_potato)
+Process.exit(b_pid, :die_tomato)
 ```

@@ -1,0 +1,205 @@
+# RabbitMQ 101
+
+## Start Rabbit MQ using docker
+
+Start RabbitMQ in docker container in a separate terminal: `docker-compose up`.
+
+In a second terminal, connect to the container:
+
+```bash
+docker exec -it third_classes_rabbitmq_1 /bin/bash
+```
+
+and add the test user:
+
+```bash
+rabbitmqctl add_user test test
+rabbitmqctl set_user_tags test administrator
+rabbitmqctl set_permissions -p / test ".*" ".*" ".*"
+```
+
+Then dicosnnect form the rabbit container using Ctrl+d.
+
+## Install AMQP dependency
+
+```elixir
+Mix.install([{:amqp, "~> 3.1"}])
+```
+
+Starting all of the needed applications.
+
+```elixir
+Application.ensure_all_started(:amqp)
+```
+
+## Publishing a message
+
+A `producer` is a user application that *sends* messages.
+A `queue` is a buffer that *stores* messages.
+A `consumer` is a user application that *receives* messages.
+
+<!-- livebook:{"break_markdown":true} -->
+
+```mermaid
+  graph LR;
+      p([Producer]) -- message --> e{exchange};
+      e{exchange} -- message --> q[queue my_test_channel];
+```
+
+```elixir
+## In case you break a channel change it's name and try running the code again.
+queue_name = "my_test_channel"
+msg = "Hello World!!XD"
+
+options = [
+  ## Depending on your OS you might need to adjsust the host.
+  ## I am using MacOS therefore I have "host.docker.internal" here
+  host: "host.docker.internal",
+  port: 5672,
+  username: "test",
+  password: "test"
+]
+
+## The first thing we need to do is to establish a connection with RabbitMQ server.
+{:ok, connection} = AMQP.Connection.open(options)
+{:ok, channel} = AMQP.Channel.open(connection)
+
+## Next, before sending we need to make sure the recipient queue exists.
+## If we send a message to non-existing location, RabbitMQ will just trash the message.
+## Let's create a queue to which the message will be delivered, let's name it #{queue_name}
+case AMQP.Queue.declare(channel, queue_name) do
+  :ok -> :ok
+  {:ok, info} -> info
+end
+```
+
+In RabbitMQ a message can never be sent directly to the queue,
+it always needs to go through an exchange. 
+A default exchange identified by an empty string (`""`).
+This exchange is special - it allows us to specify exactly to which queue the message should go.
+The queue name needs to be specified in the `routing_key` parameter.
+
+```elixir
+:ok = AMQP.Basic.publish(channel, "", queue_name, msg)
+IO.puts(" [x] Sent #{msg}")
+```
+
+## Consuming "Hello World!"
+
+```mermaid
+  graph LR;
+  q[queue my_test_channel]-- message -->c([Consumer]);
+```
+
+Our consumer listens for messages from RabbitMQ,
+so unlike the producer which publishes a single message,
+we'll keep the consumer running to listen for messages and print them out or timeout.
+
+```elixir
+{:ok, connection} = AMQP.Connection.open(options)
+{:ok, channel} = AMQP.Channel.open(connection)
+
+## Just like before, we need to make sure that the queue exists.
+## Creating a queue using `AMQP.Queue.declare`` is idempotent.
+## We can run the command as many times as we like, and only one will be created.
+case AMQP.Queue.declare(channel, queue_name) do
+  :ok -> :ok
+  {:ok, info} -> info
+end
+
+{:ok, _} = AMQP.Basic.consume(channel, queue_name, nil, no_ack: true)
+
+receive do
+  {:basic_deliver, payload, _meta} ->
+    IO.puts(" [x] Received #{payload}")
+after
+  5000 -> :timeout
+end
+```
+
+```elixir
+## Clean up not to receive messages to this consumer
+:ok = AMQP.Channel.close(channel)
+:ok = AMQP.Connection.close(connection)
+```
+
+## The reciver in a console
+
+Open a terminal window and run a receirer in an Elixir shell.
+
+```
+cd rabbit_client/
+mix deps.get
+iex -S mix
+```
+
+I have set up an Elixir project for your conviniece, installing a amqp client and starting it for you.
+
+Now call `Receive.wait_for_messages("my_test_channel", 3)` in the shell and press enter.
+The shell will hang waiting for the messages.
+
+Now go back to this livebook and publish 3 messages (unsing the Elixir section below).
+
+Nexts start another shell in the rabbit_client directory
+(so you have one on left side of the screen and one on right hand side),
+and in both shells wait for 1 message:
+`Receive.wait_for_messages("my_test_channel", 1)`.
+Next send 3 messages (again using the Elixir section below).
+
+Hint: If you need to exit the shell at any point press Ctrl+c twice.
+
+<!-- livebook:{"break_markdown":true} -->
+
+```mermaid
+  graph LR;
+  q[queue my_test_channel]-- message 1 -->c1([Consumer shell 1]);
+  q[queue my_test_channel]-- message 2 -->c2([Consumer shell 2]);
+  q[queue my_test_channel]-- message 3 -->c3([Livebook]);
+```
+
+```elixir
+{:ok, connection} = AMQP.Connection.open(options)
+{:ok, channel} = AMQP.Channel.open(connection)
+
+:ok = AMQP.Basic.publish(channel, "", queue_name, "First msg")
+:ok = AMQP.Basic.publish(channel, "", queue_name, "Second msg")
+:ok = AMQP.Basic.publish(channel, "", queue_name, "Third msg")
+```
+
+## Exchanges
+
+The core idea in the messaging model in RabbitMQ is that the producer never sends any messages directly to a queue.
+Actually, quite often the producer doesn't even know if a message will be delivered to any queue at all.
+Instead, the producer can only send messages to an exchange.
+An exchange is a very simple thing.
+On one side it receives messages from producers and the other side it pushes them to queues.
+The exchange must know exactly what to do with a message it receives.
+The rules for that are defined by the **exchange type**.
+There are a few exchange types available:
+
+* direct - a message goes to the queues whose binding key exactly matches the routing key of the message
+* topic - a message goes to the queues whose where binding key must also be in the same form
+* headers - use the message header attributes to send a messages to queue instead of routing key
+* fanout - it just broadcasts all the messages it receives to all the queues it knows
+
+```mermaid
+  graph LR;
+  p(daily word producer) --> e{word_of_the_day exchange};
+  e{word_of_the_day exchange} --> q1[words checker 1];
+  e{word_of_the_day exchange} --> q2[words checker 2];
+  e{word_of_the_day exchange} --> q3[words checker 3];
+```
+
+```elixir
+AMQP.Exchange.declare(channel, "word_of_the_day", :fanout)
+```
+
+```elixir
+message = "Word of the day is `candy`"
+AMQP.Basic.publish(channel, "word_of_the_day", "", message)
+```
+
+```elixir
+message = "Word of the day is `chess`"
+AMQP.Basic.publish(channel, "word_of_the_day", "", message)
+```
