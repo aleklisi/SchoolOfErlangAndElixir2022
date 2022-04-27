@@ -2,6 +2,8 @@
 
 ## The ring
 
+<!-- vim: set syntax=markdown: -->
+
 One Ring to rule them all,
 One Ring to find them,
 One Ring to bring them all and in the darkness bind them.
@@ -22,18 +24,90 @@ graph LR;
 
 ```
 
+```elixir
+defmodule Ring do
+  @spec start_ring(non_neg_integer()) :: pid() | {:error, String.t()}
+  def start_ring(number_of_process) when number_of_process < 2,
+    do: {:error, "Ring must be greater thand 2!"}
+
+  def start_ring(number_of_process) do
+    spawn(fn ->
+      create_process(number_of_process - 1)
+
+      loop()
+    end)
+  end
+
+  defp create_process(0), do: :ok
+
+  defp create_process(number_of_process) do
+    spawn_link(fn ->
+      create_process(number_of_process - 1)
+      loop()
+    end)
+  end
+
+  defp loop do
+    current = self()
+
+    receive do
+      {:send, msg} ->
+        IO.puts("\nStarting Broadcast from process 1")
+
+        {:links, [child]} = Process.info(current, :links)
+
+        send(child, {msg, 2, {:first, current}})
+
+      {msg, process_number, {:first, first_pid}} ->
+        IO.inspect(msg, label: "Message received by process #{process_number}")
+
+        current
+        |> Process.info(:links)
+        |> case do
+          {:links, [_last]} ->
+            send(first_pid, {msg, process_number})
+
+          {:links, [_last | childs]} ->
+            childs |> List.last() |> send({msg, process_number + 1, {:first, first_pid}})
+        end
+
+      {msg, process_number} ->
+        IO.inspect(msg, label: "Process 1 received a message back from process #{process_number}")
+    end
+
+    loop()
+  end
+end
+```
+
+```elixir
+{:error, _msg} = Ring.start_ring(1)
+```
+
+```elixir
+main = Ring.start_ring(5)
+```
+
+```elixir
+send(main, {:send, "Hello"})
+
+Process.sleep(200)
+
+send(main, {:send, "Second message"})
+```
+
 ## The best Wordle opening word
 
 Write a simulation where you check which is the best opening word.
 Try using multiple processes for that.
-For the sake of this exercise, let's assume that the best opening word is the one that eliminates the most possble words for the second guess.
+For the sake of this exercise, let's assume that the best opening word is the one that eliminates the most possible words for the second guess.
 The algorithm would be to:
 
 1. start the `main`
 2. the `main` process reads a list of all possible words to be guessed (you will find them in the wordle_words.txt file)
-3. the `main` generates all possible 5 letters strings and for each such string starts the `checker` process.
+3. the `main` generates all possible 5 letters strings and for each string starts the `checker` process.
 4. the `main` process goes to receive loop and keeps track of all of the `checker` processes as well as of the best opening word score (max of the number of words eliminated or min of numbers left)
-5. when there are no more `checker` porcesses left, the `main` process prints the result whihc is the best opening word
+5. when there are no more `checker` porcesses left, the `main` process prints the result which is the best opening word
 
 If you strugle here search for inspiration or you want to go beond any expectations see this video: [here](https://youtu.be/v68zYyaEmEA) and then [the follow up](https://youtu.be/fRed0Xmc2Wg) one to fix the possible bug.
 
@@ -50,4 +124,180 @@ graph TB;
       ... -- ... --> main;
       
 
+```
+
+## Setup
+
+```elixir
+defmodule Wordle.Data do
+  def all_possible_guesses do
+    [
+      "starn",
+      "bindi",
+      "woops",
+      "fanos",
+      "cabin",
+      "souct",
+      "trass",
+      "shoat",
+      "lefty",
+      "durra",
+      "hypes",
+      "junta",
+      "baisa",
+      "bises",
+      "kipps",
+      "sable",
+      "abacs",
+      "thurl",
+      "nurrs",
+      "saris",
+      "wroth",
+      "venal",
+      "texas",
+      "soman",
+      "linds",
+      "laden",
+      "nolos",
+      "pixie",
+      "calms",
+      "chert",
+      "oxbow",
+      "groma",
+      "nomen",
+      "potae",
+      "noyed",
+      "fifty",
+      "muils",
+      "pukus",
+      "crane",
+      "tetra",
+      "dwaal",
+      "diels",
+      "ikons"
+    ]
+  end
+
+  def all_possible_words do
+    [
+      "aaaaa",
+      "arbum",
+      "bidoy",
+      "bzfjk",
+      "cqhdw",
+      "dhiyi",
+      "dyksu",
+      "epmng",
+      "fgohs",
+      "fxqce",
+      "gorwq",
+      "hftrc",
+      "hwvlo",
+      "inxga",
+      "jezam",
+      "jwauy",
+      "kncpk",
+      "leejw",
+      "lvgei",
+      "mmhyu",
+      "ndjtg",
+      "nulns",
+      "olnie",
+      "pcpcq",
+      "ptqxc",
+      "qksro",
+      "rbuma",
+      "rswgm",
+      "sjyay",
+      "tazvk",
+      "tsbpw",
+      "ujdki",
+      "vafeu",
+      "vrgzg",
+      "wiits",
+      "wzkoe",
+      "xqmiq",
+      "yhodc",
+      "yypxo",
+      "zprsa"
+    ]
+  end
+end
+```
+
+## Solution
+
+```elixir
+defmodule Wordle.Opening do
+  @moduledoc """
+  Solution:
+  1 - Compute the letter frequency of the list of guessing words
+  2 - Generate all possible words with five letters
+  3 - For each word generated in step two, check its score by
+      seeing how many letters are in the most frequency letters generated in step one
+  4 - Choose the generated word composable by the most frequency letters
+  """
+  alias Wordle.Data
+
+  def start do
+    main_pid = self()
+
+    all_possible_guesses = read_all_possible_guesses()
+    all_possible_words = generate_all_possible_words()
+
+    letters_frequency = compute_frequency(all_possible_guesses)
+
+    Enum.each(all_possible_words, &check_word(&1, letters_frequency, main_pid))
+
+    loop()
+  end
+
+  # TODO: read from wordle_words.txt file
+  defp read_all_possible_guesses, do: Data.all_possible_guesses()
+
+  # TODO: generate all 11_881_376 possible words with five letters
+  # see: https://elixirforum.com/t/how-to-generate-all-possible-3-letter-strings/45574/13
+  defp generate_all_possible_words, do: Data.all_possible_words()
+
+  defp compute_frequency(words) do
+    Enum.reduce(words, %{}, fn word, acc ->
+      word
+      |> String.graphemes()
+      |> Enum.reduce(acc, fn letter, acc ->
+        Map.update(acc, letter, 1, &(&1 + 1))
+      end)
+    end)
+  end
+
+  defp check_word(word, letters_frequency, main_pid) do
+    score =
+      word
+      |> String.graphemes()
+      |> Enum.uniq()
+      |> Enum.map(&Map.get(letters_frequency, &1, 0))
+      |> Enum.sum()
+
+    send(main_pid, {word, score})
+  end
+
+  defp loop(state \\ {"", -1})
+
+  defp loop({actual_word, actual_score} = state) do
+    updated_state =
+      receive do
+        {_word, score} = msg ->
+          if(score >= actual_score, do: msg, else: state)
+      after
+        :timer.seconds(1) ->
+          IO.puts("The best opening word is: '#{actual_word}'")
+          :stop
+      end
+
+    loop(updated_state)
+  end
+
+  defp loop(_stop_signal), do: :ok
+end
+
+Wordle.Opening.start()
 ```
