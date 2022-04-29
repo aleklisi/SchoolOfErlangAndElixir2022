@@ -43,13 +43,13 @@ A `consumer` is a user application that *receives* messages.
 ```mermaid
   graph LR;
       p([Producer]) -- message --> e{exchange};
-      e{exchange} -- message --> q[queue my_test_channel];
+      e{exchange} -- message --> q[queue my_test_queue];
 ```
 
 ```elixir
 ## In case you break a channel change it's name and try running the code again.
-queue_name = "my_test_channel"
-msg = "Hello World!!XD"
+queue_name = "my_queue"
+msg = "Hello World! 3"
 
 options = [
   ## Depending on your OS you might need to adjsust the host.
@@ -67,7 +67,7 @@ options = [
 ## Next, before sending we need to make sure the recipient queue exists.
 ## If we send a message to non-existing location, RabbitMQ will just trash the message.
 ## Let's create a queue to which the message will be delivered, let's name it #{queue_name}
-case AMQP.Queue.declare(channel, queue_name) do
+case AMQP.Queue.declare(channel, queue_name, durable: true) do
   :ok -> :ok
   {:ok, info} -> info
 end
@@ -88,7 +88,7 @@ IO.puts(" [x] Sent #{msg}")
 
 ```mermaid
   graph LR;
-  q[queue my_test_channel]-- message -->c([Consumer]);
+  q[queue my_test_queue]-- message -->c([Consumer]);
 ```
 
 Our consumer listens for messages from RabbitMQ,
@@ -161,6 +161,8 @@ Hint: If you need to exit the shell at any point press Ctrl+c twice.
 {:ok, connection} = AMQP.Connection.open(options)
 {:ok, channel} = AMQP.Channel.open(connection)
 
+queue_name = "my_test_queue_2"
+
 :ok = AMQP.Basic.publish(channel, "", queue_name, "First msg")
 :ok = AMQP.Basic.publish(channel, "", queue_name, "Second msg")
 :ok = AMQP.Basic.publish(channel, "", queue_name, "Third msg")
@@ -190,16 +192,64 @@ There are a few exchange types available:
   e{word_of_the_day exchange} --> q3[words checker 3];
 ```
 
+<!-- livebook:{"break_markdown":true} -->
+
+Let's tart by declaring an exchange as follows:
+
 ```elixir
 AMQP.Exchange.declare(channel, "word_of_the_day", :fanout)
 ```
+
+Next go to both of the terminals where you are running rabbit_client and run `Receive.check_word_of_the_day()` in each of them.
+After that, send a Word of the day message using the snippet livebook below.
 
 ```elixir
 message = "Word of the day is `candy`"
 AMQP.Basic.publish(channel, "word_of_the_day", "", message)
 ```
 
+Next start the third terminal and connect it to the exchage like you did it above.
+After that send the message again. It should show up on all 3 terminals.
+
 ```elixir
-message = "Word of the day is `chess`"
+message = "Word of the day is `chair`"
 AMQP.Basic.publish(channel, "word_of_the_day", "", message)
 ```
+
+Now start 4th terminal (I promise there will be no 5th one) and connect to the rabbit:
+
+<!-- livebook:{"force_markdown":true} -->
+
+```elixir
+options = [
+          host: "localhost",
+          port: 5672,
+          username: "test",
+          password: "test"
+        ]
+
+{:ok, connection} = AMQP.Connection.open(options)
+{:ok, channel} = AMQP.Channel.open(connection)
+```
+
+and form any of the 3 previously started terminals copy the queue name and delete the queue.
+The queue name was printed when you called function `Receive.check_word_of_the_day()`.
+Paste the queue name to `""` in the snippet below and run this snippet in the 4th shell:
+
+<!-- livebook:{"force_markdown":true} -->
+
+```elixir
+queue_to_be_deleted = ""
+AMQP.Queue.delete(channel, queue_to_be_deleted)
+```
+
+After you delete the queue ran the snippet below.
+
+```elixir
+message = "Word of the day is `chair`"
+AMQP.Basic.publish(channel, "word_of_the_day", "", message)
+```
+
+Now notice that the message was only delivered to the 2 out of 3 terminals.
+Which is caused by deleting the queue.
+This is how you can dinamicaly add and remove consumers from a fanout exchange.
