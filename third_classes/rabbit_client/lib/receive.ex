@@ -1,9 +1,9 @@
 defmodule Receive do
-    def wait_for_messages(channel_name, n) do
+    def wait_for_messages(queue_name, n) do
         {:ok, connection} = AMQP.Connection.open(options())
         {:ok, channel} = AMQP.Channel.open(connection)
-        AMQP.Queue.declare(channel, channel_name)
-        AMQP.Basic.consume(channel, channel_name, nil, no_ack: true)
+        AMQP.Queue.declare(channel, queue_name)
+        AMQP.Basic.consume(channel, queue_name, nil, no_ack: true)
         wait_for_messages(n)
     end
 
@@ -11,7 +11,7 @@ defmodule Receive do
     defp wait_for_messages(n) do
     receive do
         {:basic_deliver, payload, _meta} ->
-            IO.puts " [x] Received #{payload}"
+            IO.puts "Received #{payload}"
             wait_for_messages(n-1)
         end
     end
@@ -27,7 +27,7 @@ defmodule Receive do
         ## There's an exclusive flag, which is reposnsible for deleting the queue 
         ## once the consumer connection is closed
         # https://hexdocs.pm/amqp/AMQP.Queue.html#declare/3
-        {:ok, %{queue: my_queue_name}} = AMQP.Queue.declare(channel, "", exclusive: true)
+        {:ok, %{queue: my_queue_name}} = AMQP.Queue.declare(channel, "")
 
         IO.inspect("My_queue_name is #{my_queue_name}")
 
