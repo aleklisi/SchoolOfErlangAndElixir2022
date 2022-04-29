@@ -4,7 +4,11 @@ services:
   rabbitmq:
     image: docker.io/bitnami/rabbitmq:3.9
     ports:
-      - '4369:4369'
+    # This port is to exposes RabbitMQ's EPMD
+    # it is not needed for out purposes
+    # and it might colide with eg Erlang Language Server or your project
+    # Lear more: https://www.erlang.org/doc/man/epmd.html
+      # - '4369:4369'  
       - '5551:5551'
       - '5552:5552'
       - '5672:5672'
